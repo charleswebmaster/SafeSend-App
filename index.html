@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    
+    
+    
+    <title>Secure Message Sharing</title>
+    <style>
+        /* Styling for the form and button */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            border-radius: 50px;
+        }
+
+        /* Styling for the form */
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+            max-width: 400px; /* Maximum width for desktop screens */
+            margin: 0 auto; /* Center the form */
+        }
+        
+
+        /* Styling for labels */
+        label {
+            margin-bottom: 5px;
+        }
+
+        /* Styling for inputs, textarea, and select */
+        input, textarea, select {
+            margin-bottom: 15px;
+            padding: 10px;
+            width: 100%; /* Make inputs full width */
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            box-sizing: border-box; /* Ensure padding doesn't affect width */
+        }
+
+        /* Styling for the button with gradient background */
+        button {
+            padding: 10px;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(to right, blue, #3594F7);
+            cursor: pointer;
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        /* Button hover effect to change to light blue */
+        button:hover {
+            background-color: light blue;
+        }
+
+        /* Container for generated link */
+        #linkContainer {
+            text-align: center; /* Center the link container */
+            display: none; /* Hide the link container initially */
+        }
+
+        /* Media query for responsiveness */
+        @media (max-width: 600px) {
+            /* Adjustments for mobile screens */
+            form {
+                width: 100%; /* Make the form full width on mobile screens */
+                padding: 0px; /* Add padding for better spacing */
+            }
+
+            textarea {
+                min-height: 80px; /* Reduce the height of the textarea */
+            }
+        }
+
+        @media (min-width: 601px) and (max-width: 1024px) {
+            /* Adjustments for tablet screens */
+            form {
+                width: 90%; /* Make the form 90% width on tablet screens */
+                padding: 0px; /* Add padding for better spacing */
+            }
+
+            textarea {
+                min-height: 100px; /* Adjust the height of the textarea */
+            }
+        }
+        
+        
+        /* Custom alert box styling */
+#customAlert {
+    display: none;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 1000;
+    font-family: Poppins, sans-serif;
+}
+
+#customAlert button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(to right, blue, purple);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#customAlert button:hover {
+    background-color: lightblue;
+}
+
+#alertOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 999;
+}
+
+        
+    </style>
+</head>
+<body>
+  <center>  <h3>Secure Message Sharing</h3> </center>
+
+    <form id="messageForm">
+        <label for="message">Input your message:</label>
+        <textarea id="message" rows="5" placeholder="Type your message here..." required></textarea>
+
+        <label for="passphrase">Passphrase (optional):</label>
+        <input type="text" id="passphrase" placeholder="Enter passphrase">
+
+        <label for="expiration">Expiration period:</label>
+        <div>
+            <input type="number" id="expirationValue" placeholder="Enter expiration time" required>
+            <select id="expirationUnit">
+                <option value="seconds">Seconds</option>
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+            </select>
+        </div>
+
+        <button type="submit">Generate Link</button>
+    </form>
+
+    <div id="linkContainer">
+        <!-- The generated link will be displayed here -->
+        <div id="generatedLink"></div>
+
+        <!-- Social media icons -->
+        <div id="shareIcons">
+            <button onclick="shareOnWhatsApp()">WhatsApp</button>
+         <!--   <button onclick="shareOnMessenger()">Messenger</button> -->
+            <button onclick="shareOnEmail()">Email</button>
+            <button onclick="shareOnTwitterX()">Twitter X</button>
+            <button onclick="copyToClipboard()">Copy Link</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('messageForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const message = document.getElementById('message').value;
+            const passphrase = document.getElementById('passphrase').value;
+            const expirationValue = parseInt(document.getElementById('expirationValue').value);
+            const expirationUnit = document.getElementById('expirationUnit').value;
+
+            // Calculate the expiration time in seconds based on the user's chosen unit
+            let expirationInSeconds;
+            switch (expirationUnit) {
+                case 'seconds':
+                    expirationInSeconds = expirationValue;
+                    break;
+                case 'minutes':
+                    expirationInSeconds = expirationValue * 60;
+                    break;
+                case 'hours':
+                    expirationInSeconds = expirationValue * 3600;
+                    break;
+                case 'days':
+                    expirationInSeconds = expirationValue * 86400;
+                    break;
+            }
+
+            // Send data to the server using a POST request
+            fetch('https://apps.techex.com.ng/safesend/linkgen/generate-link.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message, passphrase, expiration: expirationInSeconds }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with a status code ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.link) {
+                    // Display the generated link
+                    document.getElementById('generatedLink').innerHTML = `<a href="${data.link}" target="_blank">${data.link}</a>`;
+                    document.getElementById('linkContainer').style.display = 'block'; // Show the link container
+
+                    // Make the social media icons visible and functional
+                    document.getElementById('linkContainer').style.display = 'block';
+                } else {
+                    console.error('Error generating link:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        function shareOnWhatsApp() {
+            const link = document.getElementById('generatedLink').innerText;
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(link)}`;
+            window.open(url, '_blank');
+        }
+
+     //   function shareOnMessenger() {
+     //       const link = document.getElementById('generatedLink').innerText;
+     //       const url = `fb-messenger://share?link=${encodeURIComponent(link//)}`;
+     //       window.open(url, '_blank');
+     //   }
+
+        function shareOnEmail() {
+            const link = document.getElementById('generatedLink').innerText;
+            const subject = encodeURIComponent('Check this out!');
+            const url = `mailto:?subject=${subject}&body=${encodeURIComponent(link)}`;
+            window.open(url);
+        }
+
+        function shareOnTwitterX() {
+            const link = document.getElementById('generatedLink').innerText;
+            const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}`;
+            window.open(url, '_blank');
+        }
+
+        function copyToClipboard() {
+            const link = document.getElementById('generatedLink').innerText;
+            navigator.clipboard.writeText(link)
+                .then(() => alert('Link copied to clipboard!'))
+                .catch(err => console.error('Could not copy text: ', err));
+        }
+        
+        function showAlert(message) {
+    document.getElementById('alertMessage').innerText = message;
+    document.getElementById('customAlert').style.display = 'block';
+    document.getElementById('alertOverlay').style.display = 'block';
+}
+
+function closeAlert() {
+    document.getElementById('customAlert').style.display = 'none';
+    document.getElementById('alertOverlay').style.display = 'none';
+}
+
+function copyToClipboard() {
+    const link = document.getElementById('generatedLink').innerText;
+    navigator.clipboard.writeText(link)
+        .then(() => showAlert('Link copied to clipboard!'))
+        .catch(err => console.error('Could not copy text: ', err));
+}
+
+        
+    </script>
+    
+    <center><br><br><br><br><br>
+       <i style="font-size:10px"> &copy; 2024 TechEx Innovations Ltd </i>
+    </center>
+    
+    <div id="alertOverlay"></div>
+<div id="customAlert">
+    <p id="alertMessage">This is an alert!</p>
+    <button onclick="closeAlert()">Okay</button>
+</div>
+
+    
+</body>
+</html>
